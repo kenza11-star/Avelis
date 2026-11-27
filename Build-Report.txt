@@ -1,0 +1,54 @@
+Avelis — laporan build checkpoint native Android
+
+Upstream: https://github.com/horihori2013/KriTap
+Commit: 8278556b63b3bbede46c3b126666d751b644386b
+Lisensi: GPL versi 3 untuk keseluruhan Krita menurut README upstream.
+File dan aset individual mengikuti pemberitahuan masing-masing dalam sumber.
+Tool lokal: OpenJDK 21.0.13.1; cmake, ninja, adb, dan sdkmanager tidak ditemukan di PATH.
+SDK/NDK, Qt Android, dan lingkungan build KDE yang dipakai CI upstream tidak tersedia.
+Kebutuhan packaging yang terbaca dari build.gradle: minSdk 24, targetSdk 36,
+Android Build Tools 36.0.0, NDK 27.3.13750724. CI upstream memakai Qt5.
+README.android.md merujuk androidbuild.sh yang tidak ada pada commit ini.
+Jalur yang disiapkan mengikuti build-tools/ci-scripts/android.yml.
+
+Perubahan: label Android untuk manifest utama, debug dan nightly; skrip build
+dan workflow manual untuk runner Linux dengan toolchain KDE Android terpasang.
+ID Android upstream dipertahankan pada checkpoint ini. ID produksi masih TBD.
+
+Build baseline, build modifikasi, signing, verifikasi ABI APK, instalasi,
+pengujian UI, dan CI jarak jauh: NOT RUN. APK/checksum/signature: tidak tersedia.
+arm64-v8a adalah target skrip. Kompatibilitas ABI OS POCO C71 belum diverifikasi.
+Avelis-Preview.png: diblokir karena tidak ada build yang dapat dijalankan.
+
+Validasi: git diff --check dan bash -n build-tools/avelis-android.sh (exit 0).
+Workflow memerlukan runner berlabel avelis-kde-android dengan lingkungan KDE.
+Tidak ada build atau publikasi GitHub yang dijalankan. Lihat AVELIS.md.
+
+Avelis V2
+- ZIP V1 berhasil diuji dengan unzip -tq (exit 0). Versi sebelumnya disimpan.
+- Dependency recipes dan skrip CI KDE berhasil di-clone. Commit di AVELIS.md.
+- bash build-tools/avelis-android.sh (exit 1): AVELIS_KDE_DEPS belum disetel
+  pada percobaan awal dan preflight tidak mencapai compiler. Lingkungan
+  /var/lib/ci-files dan /opt/android-tooling tidak ada; cmake, ninja, adb,
+  Docker dan QEMU tidak ditemukan di PATH. Endpoint image lama berakhir
+  HTTP 404 ketika diakses langsung. Metadata registry KDE mengembalikan 200;
+  kecocokan artefak binary, Qt dan SDK belum terverifikasi.
+- GitHub Actions tidak dijalankan. Workflow membutuhkan runner KDE Android
+  yang sudah disiapkan; tidak ada repo tujuan berizin untuk eksekusi.
+- Package ID Gradle org.avelis.paint, varian debug org.avelis.paint.debug.
+  Java/JNI namespace upstream dipertahankan untuk kompatibilitas.
+- Penghapusan billing, aktivitas donasi dan menu unduh supporter diperiksa
+  pada source. Penghapusan izin jaringan masih perlu dicek di manifest APK.
+- git diff --check, bash -n, parsing AndroidManifest, assertion penghapusan
+  billing/izin jaringan serta pengecekan ZIP tiga bundle bawaan: exit 0.
+- APK dan uji POCO C71 masih tidak tersedia. Tidak ada catatan penggunaan RAM
+  atau klaim paritas ibisPaint. Status pengujian di Feature-Matrix.md.
+- Percobaan lanjutan dengan AVELIS_KDE_DEPS menunjuk checkout resmi yang
+  sudah tersedia dan AVELIS_KDE_ENV=/var/lib/ci-files/setup-environment.sh
+  berhenti pada baris 10 dengan "No such file or directory" (exit 1).
+
+Update cakupan perangkat
+- ABI ARM64, ARM 32-bit, dan x86-64 mengikuti job upstream. Skrip dan
+  workflow memakai cache serta folder output berdasarkan ABI.
+- minSdk 24, targetSdk 36. Matriks belum menghasilkan APK karena
+  preflight toolchain lokal masih terblokir. GitHub Actions belum dijalankan.
