@@ -37,7 +37,7 @@ public:
 KisAboutApplication::KisAboutApplication(QWidget *parent)
     : KoDialog(parent)
 {
-    setWindowTitle(i18n("About Krita"));
+    setWindowTitle(i18n("About Avelis"));
     setButtons(KoDialog::Close);
 
     WdgAboutApplication *wdgTab = new WdgAboutApplication(this);
@@ -94,7 +94,7 @@ KisAboutApplication::KisAboutApplication(QWidget *parent)
         authors.append(developersText.readAll().split("\n", Qt::SkipEmptyParts).join(", "));
     }
     authors.append(".</p></body></html>");
-    wdgTab->lblAuthors->setText(authors);
+    wdgTab->lblAuthors->setText(i18n("<p><b>Avelis developer:</b> kyn-x</p>") + authors);
 
     // Translators
     // TODO: move to KisApplication after string freeze is lifted

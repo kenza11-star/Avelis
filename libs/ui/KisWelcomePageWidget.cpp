@@ -131,8 +131,8 @@ KisWelcomePageWidget::KisWelcomePageWidget(QWidget *parent)
 {
     setupUi(this);
 
-    // branding: the app is called KriTap
-    startTitleLabel->setText(i18n("KriTap"));
+    // branding: the app is called Avelis
+    startTitleLabel->setText(i18n("Avelis"));
 
     // URLs that go to web browser...
     devBuildIcon->setIcon(KisIconUtils::loadIcon("warning"));
@@ -815,7 +815,7 @@ void KisWelcomePageWidget::slotSetUpdateStatus(KisUpdaterStatus updateStatus)
 
 void KisWelcomePageWidget::slotShowUpdaterErrorDetails()
 {
-    QMessageBox::warning(qApp->activeWindow(), i18nc("@title:window", "KriTap"), m_updaterStatus.updaterOutput());
+    QMessageBox::warning(qApp->activeWindow(), i18nc("@title:window", "Avelis"), m_updaterStatus.updaterOutput());
 }
 
 void KisWelcomePageWidget::updateVersionUpdaterFrame()
