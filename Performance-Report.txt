@@ -1,0 +1,18 @@
+Avelis — laporan performa checkpoint
+Lingkungan: Work Linux x86_64, tanpa build Android dan perangkat uji.
+Status perangkat Android lintas merek dan kelas RAM: NOT RUN.
+
+Skenario                                     Baseline      Avelis
+Cold launch, galeri 100 proyek                NOT RUN       NOT RUN
+1080×1080, 5 layer raster, kuas standar        NOT RUN       NOT RUN
+2048×2048, 10–20 layer raster                  NOT RUN       NOT RUN
+4096×4096, stress dengan memori memadai        NOT RUN       NOT RUN
+Animasi dengan audio dan referensi 3D          NOT RUN       NOT RUN
+15 menit menggambar, undo/redo, buka/tutup    NOT RUN       NOT RUN
+Recovery, ruang penuh, upgrade               NOT RUN       NOT RUN
+
+PSS/RSS, startup, frame pacing, latensi input, CPU/GPU dan I/O belum diukur.
+Ambil adb shell getprop ro.product.cpu.abilist sebelum memilih ABI.
+Bandingkan build dengan kanvas, brush, zoom, jumlah layer dan durasi sama.
+Catat adb shell dumpsys meminfo <package> pada awal, selama dan setelah tes.
+Profil Ultra Lite/Balanced/Quality belum diimplementasikan atau dituning.
