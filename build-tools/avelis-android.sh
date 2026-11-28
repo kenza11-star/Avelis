@@ -53,7 +53,16 @@ trap 'cp "$config_backup" .kde-ci.yml; rm -rf -- "$KDECI_WORKDIR_PATH"' EXIT
 package_apk() {
     "$AVELIS_KDE_PYTHON" -u build-tools/ci-scripts/build-android-package.py 2>&1 | tee -a build-apk.log
 }
+# AGP 8.12 butuh JDK 17+, sedangkan image runner default ke Java 11.
+for jdk in "${JAVA_HOME_17_X64:-}" "${JAVA_HOME_21_X64:-}"; do
+    if [[ -n "$jdk" && -x "$jdk/bin/java" ]]; then
+        export JAVA_HOME="$jdk"
+        export PATH="$JAVA_HOME/bin:$PATH"
+        break
+    fi
+done
 : > build-apk.log
+{ echo "## JAVA_HOME=${JAVA_HOME:-unset}"; java -version 2>&1; } | tee -a build-apk.log || true
 if package_apk; then
     :
 elif [[ "${GITHUB_ACTIONS:-}" == true ]] && grep -Fq 'Invalid json output from qmlimportscanner.' build-apk.log; then
