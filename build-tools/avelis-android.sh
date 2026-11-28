@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
-root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ ! -d "$root/build-tools" ]]; then
+    root="$(dirname "$root")"
+fi
 cd "$root"
 abi="${1:-arm64-v8a}"
 case "$abi" in
@@ -47,7 +50,45 @@ trap 'cp "$config_backup" .kde-ci.yml; rm -rf -- "$KDECI_WORKDIR_PATH"' EXIT
 "$AVELIS_KDE_PYTHON" -u "$AVELIS_KDE_DEPS/ci-utilities/run-ci-build.py" \
     --project "$CI_PROJECT_NAME" --branch "$CI_COMMIT_REF_NAME" \
     --platform "Android/$abi/Qt5/Shared" --only-build --skip-publishing 2>&1 | tee build-krita.log
-"$AVELIS_KDE_PYTHON" -u build-tools/ci-scripts/build-android-package.py 2>&1 | tee build-apk.log
+package_apk() {
+    "$AVELIS_KDE_PYTHON" -u build-tools/ci-scripts/build-android-package.py 2>&1 | tee -a build-apk.log
+}
+: > build-apk.log
+if package_apk; then
+    :
+elif [[ "${GITHUB_ACTIONS:-}" == true ]] && grep -Fq 'Invalid json output from qmlimportscanner.' build-apk.log; then
+    # qmlimportscanner bawaan paket Qt KDE crash (segfault) di runner GitHub.
+    # Ganti dengan qmlimportscanner Qt5 host dari apt, lalu ulangi packaging.
+    echo "## qmlimportscanner KDE crash, mencoba scanner host dari apt" | tee -a build-apk.log
+    sudo apt-get update
+    sudo apt-get install -y --no-install-recommends qtdeclarative5-dev-tools
+    # dpkg -L mengembalikan 2 path (asli + symlink multiarch): ambil yang pertama saja.
+    host_scanner="$(dpkg -L qtdeclarative5-dev-tools | awk '/\/qt5\/bin\/qmlimportscanner$/ {print; exit}')"
+    if [[ -z "$host_scanner" || ! -x "$host_scanner" ]]; then
+        echo "qmlimportscanner host (apt) tidak ditemukan" >&2
+        exit 1
+    fi
+    install_root="$KDECI_WORKDIR_PATH/krita/_install"
+    mapfile -t scanners < <(find "$install_root" -name qmlimportscanner \( -type f -o -type l \))
+    if (( ${#scanners[@]} == 0 )); then
+        echo "qmlimportscanner tidak ditemukan di $install_root" >&2
+        exit 1
+    fi
+    for scanner in "${scanners[@]}"; do
+        echo "## Mengganti $scanner dengan wrapper ke $host_scanner" | tee -a build-apk.log
+        { file "$scanner" || true; ldd "$scanner" || true; } 2>&1 | tee -a build-apk.log
+        mv "$scanner" "$scanner.kde"
+        {
+            printf '#!/usr/bin/env bash\n'
+            printf 'unset LD_LIBRARY_PATH QT_PLUGIN_PATH\n'
+            printf 'exec %q "$@"\n' "$host_scanner"
+        } > "$scanner"
+        chmod +x "$scanner"
+    done
+    package_apk
+else
+    exit 1
+fi
 shopt -s nullglob
 apks=("$KDECI_WORKDIR_PATH"/krita/_packaging/*.apk)
 if (( ${#apks[@]} == 0 )); then
