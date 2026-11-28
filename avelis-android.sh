@@ -53,19 +53,33 @@ package_apk() {
 if package_apk; then
     :
 elif [[ "${GITHUB_ACTIONS:-}" == true ]] && grep -Fq 'Invalid json output from qmlimportscanner.' build-apk.log; then
+    # qmlimportscanner bawaan paket Qt KDE crash (segfault) di runner GitHub.
+    # Ganti dengan qmlimportscanner Qt5 host dari apt, lalu ulangi packaging.
     mv build-apk.log build-apk-original-scanner.log
     sudo apt-get update
     sudo apt-get install -y --no-install-recommends qtdeclarative5-dev-tools
-    host_scanner="$(dpkg -L qtdeclarative5-dev-tools | awk '/\/qt5\/bin\/qmlimportscanner$/ {print}')"
-    test -x "$host_scanner"
-    scanner="$KDECI_WORKDIR_PATH/krita/_install/bin/qmlimportscanner"
-    mv "$scanner" "$scanner.kde"
-    {
-        printf '#!/usr/bin/env bash\n'
-        printf 'unset LD_LIBRARY_PATH QT_PLUGIN_PATH\n'
-        printf 'exec %q "$@"\n' "$host_scanner"
-    } > "$scanner"
-    chmod +x "$scanner"
+    # dpkg -L mengembalikan 2 path (asli + symlink multiarch): ambil yang pertama saja.
+    host_scanner="$(dpkg -L qtdeclarative5-dev-tools | awk '/\/qt5\/bin\/qmlimportscanner$/ {print; exit}')"
+    if [[ -z "$host_scanner" || ! -x "$host_scanner" ]]; then
+        echo "qmlimportscanner host (apt) tidak ditemukan" >&2
+        exit 1
+    fi
+    install_root="$KDECI_WORKDIR_PATH/krita/_install"
+    mapfile -t scanners < <(find "$install_root" -name qmlimportscanner \( -type f -o -type l \))
+    if (( ${#scanners[@]} == 0 )); then
+        echo "qmlimportscanner tidak ditemukan di $install_root" >&2
+        exit 1
+    fi
+    for scanner in "${scanners[@]}"; do
+        echo "## Mengganti $scanner dengan wrapper ke $host_scanner"
+        mv "$scanner" "$scanner.kde"
+        {
+            printf '#!/usr/bin/env bash\n'
+            printf 'unset LD_LIBRARY_PATH QT_PLUGIN_PATH\n'
+            printf 'exec %q "$@"\n' "$host_scanner"
+        } > "$scanner"
+        chmod +x "$scanner"
+    done
     package_apk
 else
     exit 1
